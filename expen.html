@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Expense Tracker</title>
+  <style>
+    body {
+      background: #f9f9f9;
+      padding: 20px;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial;
+    }
+    .container {
+      max-width: 800px;
+      background: #fff;
+      padding: 20px;
+      margin: 0 auto;
+      border-radius: 8px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+    }
+    h1 { text-align: center; margin-top: 0; }
+    label { display: block; margin-top: 10px; font-weight: 600; }
+    input, textarea {
+      width: 100%;
+      padding: 6px;
+      margin-top: 4px;
+      box-sizing: border-box;
+      border-radius: 4px;
+      border: 1px solid #dcdcdc;
+    }
+    button {
+      margin-top: 12px;
+      width: 100%;
+      padding: 8px;
+      background: #4caf50;
+      color: #fff;
+      cursor: pointer;
+      border: none;
+      border-radius: 4px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 6px;
+      text-align: left;
+    }
+    th { background: #eee; }
+    .total { text-align: right; margin-top: 8px; font-weight: bold; }
+    .small-btn {
+      padding: 6px 8px;
+      font-size: 0.9rem;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .delete-btn { background: #e53935; color: #fff; border: none; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Expense Tracker</h1>
+
+    <section>
+      <label for="name">Expense Name</label>
+      <input type="text" id="name" placeholder="e.g. Groceries" />
+
+      <label for="amount">Amount (₹)</label>
+      <input type="number" id="amount" placeholder="e.g. 350" min="0" step="0.01" />
+
+      <label for="description">Description</label>
+      <textarea id="description" placeholder="e.g. Weekly fruits and vegetables"></textarea>
+
+      <label for="date">Date</label>
+      <input type="date" id="date" />
+
+      <button id="addBtn">Add Expense</button>
+    </section>
+
+    <section>
+      <h3>Recent Expenses</h3>
+      <table id="expenseTable" aria-live="polite">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Amount</th>
+            <th>Description</th>
+            <th>Date</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <div class="total" id="totalDisplay">Total: ₹0.00</div>
+    </section>
+  </div>
+
+  <script>
+    // Keep expenses in memory and in localStorage
+    let expenses = [];
+
+    // load from localStorage on start
+    function loadExpenses() {
+      try {
+        const raw = localStorage.getItem('expenses_v1');
+        if (raw) expenses = JSON.parse(raw);
+      } catch (e) {
+        console.error('Failed to load expenses:', e);
+        expenses = [];
+      }
+      renderTable();
+    }
+
+    function persistExpenses() {
+      try {
+        localStorage.setItem('expenses_v1', JSON.stringify(expenses));
+      } catch (e) {
+        console.error('Failed to save expenses:', e);
+      }
+    }
+
+    // simulate async save (keeps original structure but also persists)
+    function saveExpense(expense) {
+      return new Promise((resolve, reject) => {
+        setTimeout(() => {
+          // validation: name non-empty, amount is finite and >= 0
+          if (!expense.name || !isFinite(expense.amount) || expense.amount < 0) {
+            reject("Invalid expense data!");
+            return;
+          }
+          expenses.push(expense);
+          persistExpenses();
+          resolve("Expense saved successfully!");
+        }, 300);
+      });
+    }
+
+    // simulate async remove
+    function removeExpense(index) {
+      return new Promise((resolve, reject) => {
+        setTimeout(() => {
+          if (index < 0 || index >= expenses.length) {
+            reject("Invalid index");
+            return;
+          }
+          expenses.splice(index, 1);
+          persistExpenses();
+          resolve("Expense deleted!");
+        }, 200);
+      });
+    }
+
+    function formatDateForDisplay(isoDate) {
+      // if empty or invalid, return original
+      if (!isoDate) return "";
+      const d = new Date(isoDate);
+      if (isNaN(d)) return isoDate;
+      // Example format: 25 Sep 2025
+      return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+    }
+
+    function renderTable() {
+      const tbody = document.querySelector("#expenseTable tbody");
+      tbody.innerHTML = "";
+      let total = 0;
+
+      expenses.forEach((expense, index) => {
+        total += Number(expense.amount) || 0;
+        const tr = document.createElement("tr");
+
+        const nameTd = document.createElement("td");
+        nameTd.textContent = expense.name;
+        tr.appendChild(nameTd);
+
+        const amountTd = document.createElement("td");
+        amountTd.textContent = `₹${Number(expense.amount).toFixed(2)}`;
+        tr.appendChild(amountTd);
+
+        const descTd = document.createElement("td");
+        descTd.textContent = expense.description || "";
+        tr.appendChild(descTd);
+
+        const dateTd = document.createElement("td");
+        dateTd.textContent = formatDateForDisplay(expense.date);
+        tr.appendChild(dateTd);
+
+        const actionTd = document.createElement("td");
+        const delBtn = document.createElement("button");
+        delBtn.className = "small-btn delete-btn";
+        delBtn.textContent = "Delete";
+        delBtn.onclick = () => deleteExpense(index);
+        actionTd.appendChild(delBtn);
+        tr.appendChild(actionTd);
+
+        tbody.appendChild(tr);
+      });
+
+      document.getElementById("totalDisplay").textContent = `Total: ₹${total.toFixed(2)}`;
+    }
+
+    function clearForm() {
+      document.getElementById("name").value = "";
+      document.getElementById("amount").value = "";
+      document.getElementById("description").value = "";
+      document.getElementById("date").value = "";
+      document.getElementById("name").focus();
+    }
+
+    // Called after successful add
+    function onExpenseAdded(message) {
+      console.log("Callback:", message);
+      renderTable();
+      clearForm();
+    }
+
+    async function handleAddExpense() {
+      const name = document.getElementById("name").value.trim();
+      const amountRaw = document.getElementById("amount").value;
+      const amount = parseFloat(amountRaw);
+      const description = document.getElementById("description").value.trim();
+      const date = document.getElementById("date").value; // ISO yyyy-mm-dd or empty
+
+      // validation
+      if (!name) {
+        alert("Please enter an expense name.");
+        return;
+      }
+      if (isNaN(amount) || !isFinite(amount)) {
+        alert("Please enter a valid numeric amount.");
+        return;
+      }
+      if (amount < 0) {
+        alert("Amount cannot be negative.");
+        return;
+      }
+      if (!date) {
+        alert("Please select a date.");
+        return;
+      }
+
+      const expense = { name, amount: Number(amount), description, date };
+
+      try {
+        const result = await saveExpense(expense);
+        onExpenseAdded(result);
+      } catch (err) {
+        alert(err);
+      }
+    }
+
+    async function deleteExpense(index) {
+      const ok = confirm("Are you sure you want to delete this expense?");
+      if (!ok) return;
+      try {
+        const result = await removeExpense(index);
+        console.log("Promise:", result);
+        renderTable();
+      } catch (err) {
+        alert(err);
+      }
+    }
+
+    // wire up add button
+    document.getElementById("addBtn").addEventListener("click", handleAddExpense);
+
+    // initialize
+    loadExpenses();
+  </script>
+</body>
+</html>

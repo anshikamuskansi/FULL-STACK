@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+<div class="main">
+    <h1>Expense Tracker</h1>
+    <div class="name">
+        <label for="expensename">Expense Name</label>
+        <input type="text" id="exp" placeholder="Shopping">
+    </div>
+    <div class="amount">
+        <label for="expenseamount">Expense Amount</label>
+        <input type="number" placeholder="2433">
+    </div>
+    <div class="description">
+        <label for="expenseDescription">ExpenseDescription</label>
+        <input type="text"  placeholder="items details">
+    </div>
+    <div class="date">
+        <label for="date">Expense Date</label>
+        <input type="date">
+    </div>
+</div>
+<table>
+    <th>expenses</th>
+    <th>name</th>
+</table>
+</body>
+<script>
+    const expenses=[];
+    function addExpense(){
+        const name=document.getElementById("expensename").value.trim;
+        const amount=parseFloat(document.getElementById("expenseamount")).value;
+        const description=document.getElementById("expenseDescription").value;
+        const date=document.getElementById("date").value;
+
+
+        document.getElementById("expenseName").value="";
+        document.getElementById("expenseAmount").value="";
+        document.getElementById("expenseDescription").value="";
+        document.getElementById("expensedate").value="";
+    }
+    function addexpense(){
+        if(!name||isNaN(amount)||amount<=0||date){
+            alert("Please enter some data ");
+            return;
+
+        }
+        expenses.push((name,amount, description,date));
+        //reset field
+        document.getElementById("expenseName").value="";
+        document.getElementById("expenseAmount").value="";
+        document.getElementById("expenseDescription").value="";
+        document.getElementById("expensedate").value="";
+    
+
+        renderTable();
+    }
+    function deleteExpense(index){
+        expenses.splice(index,-1);
+        renderTable;
+    }
+</script>
+</html>
